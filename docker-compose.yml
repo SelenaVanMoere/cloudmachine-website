@@ -1,0 +1,32 @@
+version: '3'
+services:
+  website:
+    build: .
+    container_name: mijn-website
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`CloudMachine.crabdance.com`)"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls.certresolver=myresolver"
+  
+  reverse-proxy:
+    image: traefik:v2.9
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./letsencrypt:/letsencrypt
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=selena.vanmoere@student.ap.be"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
